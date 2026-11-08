@@ -1,0 +1,79 @@
+spring:
+  config:
+    import: optional:file:.env.local[.properties]
+  application:
+    name: portal-backend
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 46MB
+  mvc:
+    async:
+      request-timeout: 15000
+server:
+  port: 8082
+  error:
+    include-message: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      environment: ${app.environment:local}
+  tracing:
+    enabled: true
+    sampling:
+      probability: ${APP_TRACING_SAMPLE_RATE:1.0}
+    propagation:
+      type: w3c
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://127.0.0.1:4318/v1/traces}
+      export:
+        enabled: ${OTEL_TRACING_EXPORT_ENABLED:false}
+logging:
+  structured:
+    format:
+      console: ${APP_LOG_FORMAT:ecs}
+    ecs:
+      service:
+        name: ${spring.application.name}
+        environment: ${app.environment:local}
+  pattern:
+    level: "%5p [traceId=%X{traceId:-} spanId=%X{spanId:-} requestId=%X{requestId:-} sessionId=%X{sessionId:-} agentId=%X{agentId:-}]"
+  level:
+    mx.portaltransporte: INFO
+app:
+  environment: ${APP_ENVIRONMENT:local}
+  crypto:
+    encryption-key: ${APP_ENCRYPTION_KEY}
+    lookup-key: ${APP_LOOKUP_KEY}
+  frontend-origin: ${APP_FRONTEND_ORIGIN:http://127.0.0.1:5173}
+  session:
+    cookie-name: ${APP_SESSION_COOKIE:PORTAL_SESSION}
+    secure: ${APP_SESSION_SECURE:false}
+    max-age-seconds: ${APP_SESSION_MAX_AGE:28800}
+  recovery:
+    dev-expose: ${APP_RECOVERY_DEV_EXPOSE:true}
+  admin:
+    username: ${APP_ADMIN_USERNAME:}
+    email: ${APP_ADMIN_EMAIL:}
+    password: ${APP_ADMIN_PASSWORD:}

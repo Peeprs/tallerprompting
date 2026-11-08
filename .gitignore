@@ -1,0 +1,16 @@
+node_modules/
+dist/
+target/
+backend/target/
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+.observability/
+.idea/
+.vscode/
+*.tsbuildinfo
+*.log
+

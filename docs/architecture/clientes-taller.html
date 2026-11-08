@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flujo Clientes UC-CV-01 con Taller Activo</title>
+<style>
+  body { font-family: sans-serif; background: #edf1ef; color: #18333d; margin: 0; padding: 24px; }
+  .wrap { max-width: 1280px; margin: auto; background: #fff; border-radius: 12px; padding: 24px; }
+  svg { width: 100%; height: auto; }
+  .node { fill: #f7f8f4; stroke: #17636b; stroke-width: 2; }
+  .db { fill: #eef7ee; stroke: #2b8058; stroke-width: 2; }
+  text { font-size: 13px; fill: #18333d; }
+  .lbl { font-size: 12px; font-weight: bold; }
+  .flow { stroke: #17636b; stroke-width: 3; fill: none; stroke-dasharray: 8 8; animation: dash 1.2s linear infinite; }
+  .flowBad { stroke: #b74c4c; stroke-width: 3; fill: none; stroke-dasharray: 8 8; animation: dash 1.2s linear infinite; }
+  .flowOk { stroke: #2b8058; stroke-width: 3; fill: none; stroke-dasharray: 8 8; animation: dash 1.2s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -16; } }
+  .steps { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .steps button { padding: 8px 14px; border-radius: 8px; border: 1px solid #17636b; background: #fff; cursor: pointer; }
+  .ok { color: #2b8058; } .bad { color: #b74c4c; } .warn { color: #8a6d1b; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>UC-CV-01 Registrar Cliente asociado a Taller Activo</h1>
+  <p>Vista estática (fallback) con todos los componentes. Clic en pasos para animar el flujo.</p>
+  <svg viewBox="0 0 1240 400" role="img" aria-label="Diagrama de flujo de clientes">
+    <rect class="node" x="20" y="60" width="180" height="90" rx="10"/><text x="35" y="95" class="lbl">RECEPCIONISTA</text><text x="35" y="115">login + rol</text><text x="35" y="132">abre alta cliente</text>
+    <rect class="node" x="240" y="60" width="180" height="90" rx="10"/><text x="255" y="95" class="lbl">Formulario N</text><text x="255" y="115">contactos botón +</text><text x="255" y="132">normaliza minúsculas</text>
+    <rect class="node" x="460" y="60" width="180" height="90" rx="10"/><text x="475" y="95" class="lbl">Selector taller</text><text x="475" y="115">solo ACTIVO</text><text x="475" y="132">GET onlyActive</text>
+    <rect class="node" x="680" y="60" width="180" height="90" rx="10"/><text x="695" y="95" class="lbl">POST /clients</text><text x="695" y="115">timeout 12 s</text><text x="695" y="132">confirma y audita</text>
+    <rect class="db" x="900" y="60" width="180" height="90" rx="10"/><text x="915" y="95" class="lbl">MySQL client</text><text x="915" y="115">workshop_id FK</text><text x="915" y="132">contactos cifrados</text>
+    <rect class="db" x="680" y="220" width="180" height="90" rx="10"/><text x="695" y="255" class="lbl">Estatus global</text><text x="695" y="275">valida ACTIVO</text><text x="695" y="292">antes de asociar</text>
+    <path id="c1" class="flow" d="M200 105 H240"/><text x="202" y="95">captura</text>
+    <path id="c2" class="flow" d="M420 105 H460"/><text x="422" y="95">elige taller</text>
+    <path id="c3" class="flowOk" d="M640 105 H680"/><text x="642" y="95">persiste</text>
+    <path id="c4" class="flowOk" d="M860 105 H900"/><text x="862" y="95">FK taller</text>
+    <path id="c5" class="flow" d="M770 150 V220"/><text x="775" y="190">verifica ACTIVO</text>
+    <path id="c6" class="flowBad" d="M680 120 C600 200 400 200 330 160"/><text x="450" y="200" class="bad">duplicado 409 / taller BAJA / sin permiso 403</text>
+  </svg>
+  <div class="steps">
+    <button onclick="run([1])">1 Captura y contactos</button>
+    <button onclick="run([2])">2 Taller activo y persistencia</button>
+    <button onclick="run([1,2])">Ver todo</button>
+  </div>
+  <ol>
+    <li><span class="ok">Éxito:</span> cliente en minúsculas, sin duplicados, asociado a taller ACTIVO y auditado por createdBy.</li>
+    <li><span class="warn">Aviso:</span> sin talleres activos el selector pide registrar uno primero.</li>
+    <li><span class="bad">Fallo:</span> 409 documento o contacto duplicado, taller en BAJA rechazado, 403 sin rol.</li>
+  </ol>
+  <p>Precondición: entrar primero al flujo de taller y asociar al cliente. Actores: RECEPCIONISTA y ADMINISTRADOR.</p>
+</div>
+<script>
+  function run(ids) {
+    ['c1','c2','c3','c4','c5','c6'].forEach(function (id) { document.getElementById(id).style.display = 'none'; });
+    var map = { 1: ['c1','c2'], 2: ['c3','c4','c5','c6'] };
+    ids.forEach(function (n) { (map[n] || []).forEach(function (id) { document.getElementById(id).style.display = ''; }); });
+  }
+  run([1,2]);
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flujo Talleres y Estatus global</title>
+<style>
+  body { font-family: sans-serif; background: #edf1ef; color: #18333d; margin: 0; padding: 24px; }
+  .wrap { max-width: 1280px; margin: auto; background: #fff; border-radius: 12px; padding: 24px; }
+  svg { width: 100%; height: auto; }
+  .node { fill: #f7f8f4; stroke: #17636b; stroke-width: 2; }
+  .ext { fill: #e8f1fb; stroke: #2466a0; stroke-width: 2; }
+  .db { fill: #eef7ee; stroke: #2b8058; stroke-width: 2; }
+  text { font-size: 13px; fill: #18333d; }
+  .lbl { font-size: 12px; font-weight: bold; }
+  .flow { stroke: #17636b; stroke-width: 3; fill: none; stroke-dasharray: 8 8; animation: dash 1.2s linear infinite; }
+  .flowBad { stroke: #b74c4c; stroke-width: 3; fill: none; stroke-dasharray: 8 8; animation: dash 1.2s linear infinite; }
+  .flowOk { stroke: #2b8058; stroke-width: 3; fill: none; stroke-dasharray: 8 8; animation: dash 1.2s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -16; } }
+  .steps { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .steps button { padding: 8px 14px; border-radius: 8px; border: 1px solid #17636b; background: #fff; cursor: pointer; }
+  .ok { color: #2b8058; } .bad { color: #b74c4c; } .warn { color: #8a6d1b; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>M02 Talleres — Registro, foto, dirección y estatus global</h1>
+  <p>Vista estática (fallback): todos los componentes visibles. Animación: flujo de datos por pasos.</p>
+  <svg viewBox="0 0 1240 420" role="img" aria-label="Diagrama de flujo de talleres">
+    <rect class="node" x="20" y="60" width="170" height="90" rx="10"/><text x="35" y="95" class="lbl">ADMINISTRADOR</text><text x="35" y="115">Formulario +</text><text x="35" y="132">DragAndDrop foto</text>
+    <rect class="ext" x="230" y="60" width="170" height="90" rx="10"/><text x="245" y="95" class="lbl">POSTALIA / IDOO</text><text x="245" y="115">Lookup CP 5 dígitos</text><text x="245" y="132">autocompleta colonia</text>
+    <rect class="node" x="440" y="60" width="170" height="90" rx="10"/><text x="455" y="95" class="lbl">React validación</text><text x="455" y="115">RFC, email, CP,</text><text x="455" y="132">foto 15 MB</text>
+    <rect class="node" x="650" y="60" width="170" height="90" rx="10"/><text x="665" y="95" class="lbl">POST /workshops</text><text x="665" y="115">multipart + timeout</text><text x="665" y="132">403 sin rol</text>
+    <rect class="db" x="860" y="60" width="170" height="90" rx="10"/><text x="875" y="95" class="lbl">MySQL estatus</text><text x="875" y="115">tabla global ACTIVO</text><text x="875" y="132">y BAJA (UUID v7)</text>
+    <rect class="db" x="860" y="220" width="170" height="90" rx="10"/><text x="875" y="255" class="lbl">MySQL workshop</text><text x="875" y="275">RFC/email cifrados</text><text x="875" y="292">foto blob + auditoría</text>
+    <rect class="node" x="440" y="220" width="170" height="90" rx="10"/><text x="455" y="255" class="lbl">Tabla Foto|Nombre</text><text x="455" y="275">|Email|Estatus|</text><text x="455" y="292">Acciones editar/borrar</text>
+    <path id="f1" class="flow" d="M190 105 H230"/><text x="192" y="95">CP</text>
+    <path id="f2" class="flow" d="M400 105 H440"/><text x="402" y="95">dirección</text>
+    <path id="f3" class="flowOk" d="M610 105 H650"/><text x="605" y="95">alta ACTIVO</text>
+    <path id="f4" class="flowOk" d="M820 105 H860"/><text x="818" y="95">seed estatus</text>
+    <path id="f5" class="flow" d="M945 150 V220"/><text x="950" y="190">statusId de BD</text>
+    <path id="f6" class="flowOk" d="M860 265 H610"/><text x="700" y="255">fila + photoUrl</text>
+    <path id="f7" class="flowBad" d="M735 150 C735 200 500 200 480 220"/><text x="560" y="195" class="bad">403 sin permiso / 409 duplicado</text>
+  </svg>
+  <div class="steps">
+    <button onclick="run([1])">1 CP por proveedores</button>
+    <button onclick="run([2])">2 Validar y alta ACTIVO</button>
+    <button onclick="run([3])">3 Editar con estatus de BD</button>
+    <button onclick="run([1,2,3])">Ver todo</button>
+  </div>
+  <ol>
+    <li><span class="ok">Éxito:</span> alta asigna ACTIVO, foto como data URL, tabla recargada.</li>
+    <li><span class="warn">Aviso:</span> CP sin cobertura o timeout 8 s por proveedor.</li>
+    <li><span class="bad">Fallo:</span> 403 modal sin permiso, 409 taller duplicado, 413 foto mayor a 15 MB.</li>
+  </ol>
+  <p>Actores: ADMINISTRADOR muta; RECEPCIONISTA y TRANSPORTISTA consultan. Estatus global reutilizable en clientes y futuros módulos.</p>
+</div>
+<script>
+  function run(ids) {
+    ['f1','f2','f3','f4','f5','f6','f7'].forEach(function (id) { document.getElementById(id).style.display = 'none'; });
+    var map = { 1: ['f1','f2'], 2: ['f3','f4','f5','f6'], 3: ['f5','f6','f7'] };
+    ids.forEach(function (n) { (map[n] || []).forEach(function (id) { document.getElementById(id).style.display = ''; }); });
+  }
+  run([1,2,3]);
+</script>
+</body>
+</html>
