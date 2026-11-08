@@ -100,6 +100,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid #7bb8bd; outline-
 .statusBadge { display: inline-block; padding: 4px 12px; font-size: 12px; font-weight: 700; border-radius: 999px; }
 .statusBadge.active { color: #226849; background: #dcefe4; }
 .statusBadge.inactive { color: #a23535; background: #f6e2df; }
+.statusBadge.assigned { color: #245b73; background: #dcecf2; }
+.statusBadge.available { color: #6b5b1f; background: #f3edcf; }
+.vehiclePhotoPicker { margin: 10px 0 18px; }
+.vehiclePhotoPicker input { margin-top: 8px; }
+.vehiclePhotoPreviews { display: flex; gap: 10px; margin-top: 10px; }
+.vehiclePhotoPreviews img { width: 86px; height: 68px; object-fit: cover; border: 1px solid #d8e2df; border-radius: 8px; }
 .sectionLabel { display: flex; align-items: center; gap: 8px; margin: 20px 0 4px; color: #28464f; font-weight: 700; }
 /* Clientes: paginacion, contactos, historial y vinculos. Actor: RECEPCIONISTA administra. Tecnica: mismos tokens del sistema. */
 .tableHeader { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; }

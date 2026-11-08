@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { AuthResponse } from '../types';
-import { trackEvent } from '../telemetry';
-import { Icon } from './Icon';
-import { ClientsSection } from './ClientsSection';
-import { RolesSection } from './RolesSection';
-import { VehiclesSection } from './VehiclesSection';
-import { WorkshopSection } from './WorkshopSection';
-import type { Notice } from '../types';
+import type { AuthResponse } from '../../types';
+import { trackEvent } from '../../telemetry';
+import { Icon } from '../../components/Icon';
+import { ClientsSection } from '../../components/ClientsSection';
+import { RolesSection } from '../../components/RolesSection';
+import { VehiclesSection } from '../../components/VehiclesSection';
+import { WorkshopSection } from '../../components/WorkshopSection';
+import type { Notice } from '../../types';
 
 type Section = 'summary' | 'clients' | 'vehicles' | 'workshops' | 'users';
 // Etiquetas de navegacion. Tecnica: sin ids en URL, estado en memoria por rol.

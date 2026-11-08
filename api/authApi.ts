@@ -25,7 +25,19 @@ interface RecoveryRequestResponse { devToken?: string }
 // Endpoints de autenticacion. Tecnica: sin ids ni tokens en URL.
 export const authApi = {
   // Autentica usuario registrado. Actor: usuario con cuenta.
-  login: (identifier: string, password: string) => request<AuthResponse>('auth/login', { identifier, password }),
+  login: async (identifier: string, password: string): Promise<AuthResponse> => {
+    await request<AuthResponse>('auth/login', { identifier, password });
+    const session = await authApi.session();
+    if (!session) throw new Error('SESSION_NOT_RESTORED');
+    return session;
+  },
+  // Recupera la sesion vigente desde la cookie HttpOnly. Actor: usuario con cuenta.
+  session: async (): Promise<AuthResponse | null> => {
+    const response = await fetchWithTimeout('/api/v1/auth/session', { credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' } });
+    if (response.status === 401 || response.status === 403) return null;
+    if (!response.ok) throw new Error('REQUEST_FAILED');
+    return response.json() as Promise<AuthResponse>;
+  },
   // Registra visitante. Actor: visitante sin cuenta.
   register: (username: string, email: string, password: string) => request<void>('auth/register', { username, email, password }),
   // Solicita enlace de recuperacion. Actor: usuario sin acceso. Devuelve token solo en dev.

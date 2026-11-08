@@ -23,8 +23,10 @@ export function LoginForm({ onNavigate, onNotice, onAuthenticated }: Props) {
       onAuthenticated(account);
       onNotice({ kind: 'success', title: 'Acceso correcto', message: 'Tu sesión se ha iniciado de forma segura.' });
     } catch (error) {
-      const network = error instanceof Error && error.message === 'NETWORK_UNAVAILABLE';
-      onNotice({ kind: 'error', title: network ? 'No hay conexión' : 'No fue posible iniciar sesión', message: network ? 'Verifica tu conexión a internet e inténtalo nuevamente.' : 'Los datos no son válidos o tu cuenta no puede acceder.' });
+      const code = error instanceof Error ? error.message : '';
+      const network = code === 'NETWORK_UNAVAILABLE';
+      const session = code === 'SESSION_NOT_RESTORED';
+      onNotice({ kind: 'error', title: network ? 'No hay conexión' : session ? 'No se conservó la sesión' : 'No fue posible iniciar sesión', message: network ? 'Verifica tu conexión a internet e inténtalo nuevamente.' : session ? 'La cookie de acceso no quedó disponible. Revisa que frontend y backend usen el mismo host y vuelve a intentarlo.' : 'Los datos no son válidos o tu cuenta no puede acceder.' });
     } finally { setPending(false); }
   };
 

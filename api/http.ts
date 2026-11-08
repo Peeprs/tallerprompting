@@ -90,8 +90,8 @@ export async function jsonRequest<T>(path: string, init: RequestInit = {}): Prom
 }
 
 // Peticion multipart con cookie. Actor: ADMINISTRADOR sube foto. Tecnica: sin Content-Type manual (el borde lo pone el navegador).
-export async function multipartRequest<T>(path: string, form: FormData, method: 'POST' | 'PUT'): Promise<T> {
-  const response = await fetchWithTimeout(`/api/v1/${path}`, { method, credentials: 'include', body: form });
+export async function multipartRequest<T>(path: string, form: FormData, method: 'POST' | 'PUT', timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
+  const response = await fetchWithTimeout(`/api/v1/${path}`, { method, credentials: 'include', body: form }, timeoutMs);
   if (response.status === 204) return undefined as T;
   if (!response.ok) throw mapStatusError(response.status);
   const text = await response.text();

@@ -25,7 +25,7 @@ export const validateLogin = (identifier: string, password: string): FieldErrors
 });
 
 export const validateRegister = (username: string, email: string, password: string, confirmation: string): FieldErrors => ({
-  ...(/^[a-zA-Z0-9._-]{4,40}$/.test(username) ? {} : { username: 'Usa de 4 a 40 caracteres: letras, números, punto, guion o guion bajo.' }),
+  ...(/^[a-zA-Z0-9._-]{4,40}$/.test(username) ? {} : { username: 'El usuario debe tener entre 4 y 40 caracteres.' }),
   ...(isAdmittedEmail(email) ? {} : { email: 'Usa un correo Gmail, Hotmail, Outlook o Microsoft válido.' }),
   ...(isSafePassword(password) ? {} : { password: 'La contraseña aún no cumple todos los requisitos.' }),
   ...(password === confirmation && confirmation ? {} : { confirmation: 'Las contraseñas deben coincidir.' })
@@ -45,6 +45,8 @@ export const formatPlate = (value: string) => {
 // Ano numerico de 4 digitos. Actor: sistema. Tecnica: bloquea letras antes de validar rango.
 export const yearPattern = /^(19|20)\d{2}$/;
 export const isValidYear = (value: string) => yearPattern.test(value.trim());
+export const vinPattern = /^[A-HJ-NPR-Z0-9]{17}$/i;
+export const isValidVin = (value: string) => vinPattern.test(value.trim());
 
 // Valor de rol dinamico. Actor: ADMINISTRADOR crea roles. Tecnica: misma regex que el backend.
 export const roleNamePattern = /^[A-Z][A-Z0-9_]{2,39}$/;
@@ -87,15 +89,15 @@ export const validateWorkshopPhoto = (file: File | null): string | null => {
 // Errores del formulario de taller. Actor: ADMINISTRADOR. Estatus solo se valida al editar.
 // Tecnica: regex por campo (nombre, calle, numero, colonia, estado, municipio) + estatus como id de BD.
 export const validateWorkshop = (values: Record<string, string>, isEditing: boolean): FieldErrors => ({
-  ...(isValidWorkshopName(values.workshopName) ? {} : { workshopName: 'Usa de 3 a 80 caracteres: letras, números, espacios, &, punto o guion.' }),
+  ...(isValidWorkshopName(values.workshopName) ? {} : { workshopName: 'Revisa el nombre del taller; debe tener entre 3 y 80 caracteres.' }),
   ...(isValidRfc(values.rfc) ? {} : { rfc: 'Ingresa un RFC válido en mayúsculas, sin espacios ni guiones.' }),
   ...(isValidWorkshopEmail(values.workshopEmail) ? {} : { workshopEmail: 'Ingresa el correo del taller.' }),
-  ...(isValidStreet(values.street) ? {} : { street: 'Usa de 2 a 80 caracteres: letras, números, espacios, punto o guion.' }),
-  ...(isValidStreetNumber(values.streetNumber) ? {} : { streetNumber: 'Usa de 1 a 10 caracteres: número, letra, espacio, guion o diagonal (ej. 123, 45-A, S/N).' }),
-  ...(isValidSuburb(values.suburb) ? {} : { suburb: 'Usa de 2 a 80 caracteres: letras, números, espacios, punto o guion.' }),
+  ...(isValidStreet(values.street) ? {} : { street: 'Ingresa el nombre de la calle.' }),
+  ...(isValidStreetNumber(values.streetNumber) ? {} : { streetNumber: 'Ingresa el número o escribe S/N.' }),
+  ...(isValidSuburb(values.suburb) ? {} : { suburb: 'Ingresa la colonia.' }),
   ...(isValidPostalCode(values.postalCode) ? {} : { postalCode: 'Ingresa un código postal de 5 dígitos.' }),
-  ...(isValidState(values.state) ? {} : { state: 'Usa de 2 a 60 caracteres: solo letras, espacios o guion.' }),
-  ...(isValidMunicipality(values.municipality) ? {} : { municipality: 'Usa de 2 a 60 caracteres: solo letras, espacios o guion.' }),
+  ...(isValidState(values.state) ? {} : { state: 'Ingresa el estado.' }),
+  ...(isValidMunicipality(values.municipality) ? {} : { municipality: 'Ingresa el municipio.' }),
   ...(isEditing ? (values.statusId ? {} : { statusId: 'Elige un estatus del catálogo.' }) : {})
 });
 
@@ -114,7 +116,7 @@ export const isValidClientContact = (value: string) => {
 // Tecnica: regex con acentos y per-contacto (contact-i) ademas del global.
 export const validateClient = (fullName: string, contacts: string[], workshopId: string): FieldErrors => {
   const next: FieldErrors = {};
-  if (!isValidClientName(fullName)) next.fullName = 'Usa de 3 a 80 caracteres: letras, acentos, espacios, punto, apóstrofo o guion.';
+  if (!isValidClientName(fullName)) next.fullName = 'Ingresa un nombre de al menos 3 caracteres.';
   const filled = contacts.map((contact) => contact.trim()).filter(Boolean);
   if (!filled.length) next.contacts = 'Agrega al menos un medio de contacto.';
   else {
@@ -151,7 +153,7 @@ export const canonicalCellphone = (value: string) => value.replace(/[\s-]/g, '')
 export const cellphonePattern = /^(\+?52)?\d{10}$/;
 export const isValidSecondaryPhone = (value: string) => cellphonePattern.test(canonicalCellphone(value.trim()));
 export const validateSecondary = (name: string, phone: string): FieldErrors => ({
-  ...(isValidSecondaryName(name) ? {} : { name: 'Usa de 3 a 80 caracteres: letras, acentos, espacios, punto, apóstrofo o guion.' }),
+  ...(isValidSecondaryName(name) ? {} : { name: 'Ingresa un nombre de al menos 3 caracteres.' }),
   ...(isValidSecondaryPhone(phone) ? {} : { phone: 'Usa 10 dígitos, con +52 opcional (ej. 5512345678).' })
 });
 

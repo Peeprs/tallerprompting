@@ -186,12 +186,12 @@ export function WorkshopDialog({ initial, onClose, onNotice, onSaved }: Props) {
 
   return <div className="modalBackdrop"><section className="recordDialog wide" role="dialog" aria-modal="true" aria-labelledby="workshopTitle">
     <button className="iconButton" onClick={onClose} aria-label="Cerrar formulario"><Icon name="close" /></button>
-    <header><p className="eyebrow">Captura segura</p><h2 id="workshopTitle">{title}</h2><p>Los campos se validan antes de enviarse al servicio autorizado.</p></header>
+    <header><p className="eyebrow">Datos del taller</p><h2 id="workshopTitle">{title}</h2><p>Completa los datos del taller y su dirección.</p></header>
     <form noValidate onSubmit={submitWorkshop}>
-      <FormField id={initial ? `workshopName-${initial.id}` : 'workshopName'} label="Nombre del taller" value={workshopName} onChange={(value) => setWorkshopName(value.slice(0, 80))} error={errors.workshopName} hint="Regex: 3 a 80 caracteres, letras, números, espacios, &, punto o guion." />
+      <FormField id={initial ? `workshopName-${initial.id}` : 'workshopName'} label="Nombre del taller" value={workshopName} onChange={(value) => setWorkshopName(value.slice(0, 80))} error={errors.workshopName} hint="De 3 a 80 caracteres; puedes usar letras, números, espacios, &, punto y guion." />
       <div className="twoColumns">
-        <FormField id={initial ? `workshopRfc-${initial.id}` : 'workshopRfc'} label="RFC del taller" value={rfc} onChange={changeRfc} error={errors.rfc} hint="Regex: ^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$." />
-        <FormField id={initial ? `workshopEmail-${initial.id}` : 'workshopEmail'} label="Correo del taller" type="email" value={workshopEmail} onChange={(value) => setWorkshopEmail(value.slice(0, 120))} error={errors.workshopEmail} hint="Regex: correo válido usuario@dominio.ext." />
+        <FormField id={initial ? `workshopRfc-${initial.id}` : 'workshopRfc'} label="RFC del taller" value={rfc} onChange={changeRfc} error={errors.rfc} hint="Escríbelo en mayúsculas y sin espacios ni guiones." />
+        <FormField id={initial ? `workshopEmail-${initial.id}` : 'workshopEmail'} label="Correo del taller" type="email" value={workshopEmail} onChange={(value) => setWorkshopEmail(value.slice(0, 120))} error={errors.workshopEmail} hint="Ejemplo: contacto@taller.com." />
       </div>
       <div>
         <span className="fieldLabel">Foto del taller</span>
@@ -220,22 +220,22 @@ export function WorkshopDialog({ initial, onClose, onNotice, onSaved }: Props) {
       </div>
       <p className="sectionLabel"><Icon name="pin" size={17} /> Dirección completa</p>
       <div className="twoColumns">
-        <SearchableSelect id={initial ? `workshopStreet-${initial.id}` : 'workshopStreet'} label="Calle" value={street} options={[]} onChange={(value) => setStreet(value.slice(0, 80))} error={errors.street} placeholder="Escribe la calle…" hint="Regex: 2 a 80 caracteres, letras, números, espacios, punto o guion." />
-        <FormField id={initial ? `workshopNumber-${initial.id}` : 'workshopNumber'} label="Número" value={streetNumber} onChange={(value) => setStreetNumber(value.slice(0, 10))} error={errors.streetNumber} hint="Regex: 1 a 10 caracteres (ej. 123, 45-A, S/N)." />
+        <SearchableSelect id={initial ? `workshopStreet-${initial.id}` : 'workshopStreet'} label="Calle" value={street} options={[]} onChange={(value) => setStreet(value.slice(0, 80))} error={errors.street} placeholder="Escribe la calle…" hint="Incluye el nombre de la calle." />
+        <FormField id={initial ? `workshopNumber-${initial.id}` : 'workshopNumber'} label="Número" value={streetNumber} onChange={(value) => setStreetNumber(value.slice(0, 10))} error={errors.streetNumber} hint="Ejemplo: 123, 45-A o S/N." />
       </div>
       <div className="twoColumns">
         <div>
-          <FormField id={initial ? `workshopPostal-${initial.id}` : 'workshopPostal'} label="Código postal" value={postalCode} onChange={changePostalCode} error={errors.postalCode} hint={lookingUp ? 'Buscando dirección…' : 'Regex: 5 dígitos. Autocompleta con debounce.'} />
+          <FormField id={initial ? `workshopPostal-${initial.id}` : 'workshopPostal'} label="Código postal" value={postalCode} onChange={changePostalCode} error={errors.postalCode} hint={lookingUp ? 'Buscando dirección…' : 'Ingresa los 5 dígitos para buscar la dirección.'} />
           <div className="cpSearchRow">
             <button type="button" className="iconAction" disabled={lookingUp || postalCode.length !== 5} title="Buscar por código postal" aria-label="Buscar por código postal" onClick={() => void fetchAddress(postalCode, true)}><Icon name="pin" size={17} /></button>
             {lookupStatus !== 'idle' && <span className={`lookupStatus ${lookupStatus}`}>{lookingUp ? 'Buscando…' : lookupMessage}</span>}
           </div>
         </div>
-        <SearchableSelect id={initial ? `workshopSuburb-${initial.id}` : 'workshopSuburb'} label="Colonia" value={suburb} options={suburbOptions} onChange={(value) => setSuburb(value.slice(0, 80))} error={errors.suburb} placeholder="Escribe o elige la colonia…" hint={suburbOptions.length ? `${suburbOptions.length} opcion(es) del CP. Regex: 2 a 80 caracteres.` : 'Sin datos del CP: escríbela a mano. Regex: 2 a 80 caracteres.'} />
+        <SearchableSelect id={initial ? `workshopSuburb-${initial.id}` : 'workshopSuburb'} label="Colonia" value={suburb} options={suburbOptions} onChange={(value) => setSuburb(value.slice(0, 80))} error={errors.suburb} placeholder="Escribe o elige la colonia…" hint={suburbOptions.length ? `${suburbOptions.length} opciones encontradas para el código postal.` : 'Si no aparece, escribe la colonia.'} />
       </div>
       <div className="twoColumns">
-        <SearchableSelect id={initial ? `workshopState-${initial.id}` : 'workshopState'} label="Estado" value={state} options={MEXICO_STATES} onChange={(value) => setState(value.slice(0, 60))} error={errors.state} placeholder="Escribe o elige el estado…" hint="Regex: 2 a 60 caracteres, solo letras, espacios o guion." />
-        <SearchableSelect id={initial ? `workshopMunicipality-${initial.id}` : 'workshopMunicipality'} label="Municipio" value={municipality} options={municipalityOptions} onChange={(value) => setMunicipality(value.slice(0, 60))} error={errors.municipality} placeholder="Escribe o elige el municipio…" hint="Regex: 2 a 60 caracteres, solo letras, espacios o guion." />
+        <SearchableSelect id={initial ? `workshopState-${initial.id}` : 'workshopState'} label="Estado" value={state} options={MEXICO_STATES} onChange={(value) => setState(value.slice(0, 60))} error={errors.state} placeholder="Escribe o elige el estado…" hint="Elige una opción de la lista o escríbela." />
+        <SearchableSelect id={initial ? `workshopMunicipality-${initial.id}` : 'workshopMunicipality'} label="Municipio" value={municipality} options={municipalityOptions} onChange={(value) => setMunicipality(value.slice(0, 60))} error={errors.municipality} placeholder="Escribe o elige el municipio…" hint="Elige una opción de la lista o escríbela." />
       </div>
       {isEditing && <div><label className="fieldLabel" htmlFor={initial ? `workshopStatus-${initial?.id}` : 'workshopStatus'}>Estatus</label>
         <select id={initial ? `workshopStatus-${initial?.id}` : 'workshopStatus'} className="selectInput" value={statusId} onChange={(event) => setStatusId(event.target.value)}>

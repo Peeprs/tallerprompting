@@ -24,7 +24,7 @@ export function RecordDialog({ kind, onClose, onNotice }: { kind: Kind; onClose:
     const next = kind === 'client' ? clientErrors(values.name ?? '', values.document ?? '', values.email ?? '') : vehicleErrors(values.plate ?? '', values.brand ?? '', values.model ?? '', values.year ?? '');
     setErrors(next); if (Object.keys(next).length) { onNotice({ kind: 'error', title: 'Revisa la información', message: 'Hay campos obligatorios o inválidos.' }); return; }
     setPending(true);
-    try { await (kind === 'client' ? recordsApi.createClient(values) : recordsApi.createVehicle(values)); onClose(); onNotice({ kind: 'success', title: kind === 'client' ? 'Cliente registrado' : 'Vehículo registrado', message: 'La información se guardó correctamente.' }); }
+    try { if (kind === 'client') await recordsApi.createClient(values); else await recordsApi.createVehicle(values, []); onClose(); onNotice({ kind: 'success', title: kind === 'client' ? 'Cliente registrado' : 'Vehículo registrado', message: 'La información se guardó correctamente.' }); }
     catch (error) { onNotice({ kind: 'error', title: error instanceof Error && error.message === 'NETWORK_UNAVAILABLE' ? 'No hay conexión' : 'No fue posible guardar', message: 'Verifica la conexión o intenta de nuevo.' }); }
     finally { setPending(false); }
   };

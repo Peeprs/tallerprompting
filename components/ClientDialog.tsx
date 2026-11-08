@@ -57,7 +57,7 @@ export function ClientDialog({ initial, onClose, onNotice, onSaved }: Props) {
       });
     if (initial) {
       recordsApi.listVehicles(1, SELECT_PAGE_SIZE)
-        .then((page) => { if (alive) setVehicles(page.content); })
+        .then((page) => { if (alive) setVehicles(page.content.filter((vehicle) => !vehicle.clientId)); })
         .catch(() => { if (alive) onNotice({ kind: 'error', title: 'Sin vehículos', message: 'No se pudo cargar el catálogo de vehículos.' }); });
       reloadLinked();
       recordsApi.listClientHistory(initial.id)
@@ -88,8 +88,8 @@ export function ClientDialog({ initial, onClose, onNotice, onSaved }: Props) {
   // Valida principal + secundarios con regex. Actor: sistema. Tecnica: espejo del backend.
   const validateForm = (): FieldErrors => {
     const next: FieldErrors = {};
-    if (!isValidClientName(fullName)) next.fullName = 'Usa de 3 a 80 caracteres: letras, acentos, espacios, punto, apóstrofo o guion.';
-    if (document.trim() && !isValidClientDocument(document)) next.document = 'Regex: ^[A-Z0-9]{10,18}$ sin espacios (RFC, CURP u otra clave).';
+    if (!isValidClientName(fullName)) next.fullName = 'Ingresa un nombre de al menos 3 caracteres.';
+    if (document.trim() && !isValidClientDocument(document)) next.document = 'Revisa la identificación; usa letras y números, sin espacios.';
     if (!principal.trim()) next.principal = 'Agrega el medio de contacto principal.';
     else if (!isValidClientContact(principal)) next.principal = 'Usa un correo válido o un teléfono de 7 a 20 dígitos.';
     secondaries.forEach((item, index) => {
@@ -176,14 +176,14 @@ export function ClientDialog({ initial, onClose, onNotice, onSaved }: Props) {
 
   return <div className="modalBackdrop"><section className="recordDialog wide" role="dialog" aria-modal="true" aria-labelledby="clientTitle">
     <button className="iconButton" onClick={onClose} aria-label="Cerrar formulario"><Icon name="close" /></button>
-    <header><p className="eyebrow">Captura segura</p><h2 id="clientTitle">{title}</h2><p>Requiere sesión, rol autorizado y un taller activo. El alta confirma, persiste y audita.</p></header>
+    <header><p className="eyebrow">Datos del cliente</p><h2 id="clientTitle">{title}</h2><p>Completa los datos y selecciona un taller activo.</p></header>
     <form noValidate onSubmit={submitClient}>
       <div className="twoColumns">
-        <FormField id="clientFullName" label="Nombre completo" value={fullName} onChange={(value) => setFullName(value.slice(0, 80))} error={errors.fullName} hint="Regex: 3 a 80 caracteres, letras, acentos, espacios, punto, apóstrofo o guion." />
-        <FormField id="clientDocument" label="Identificación (opcional)" value={document} onChange={(value) => setDocument(value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 18))} error={errors.document} hint="Regex: ^[A-Z0-9]{10,18}$ sin espacios." />
+        <FormField id="clientFullName" label="Nombre completo" value={fullName} onChange={(value) => setFullName(value.slice(0, 80))} error={errors.fullName} hint="De 3 a 80 letras; puedes usar acentos, espacios, punto, apóstrofo y guion." />
+        <FormField id="clientDocument" label="Identificación (opcional)" value={document} onChange={(value) => setDocument(value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 18))} error={errors.document} hint="RFC, CURP u otra clave, sin espacios." />
       </div>
       <div><span className="fieldLabel">Contacto principal</span>
-        <FormField id="clientPrincipal" label="Correo o teléfono principal" value={principal} onChange={(value) => setPrincipal(value.slice(0, 120))} error={errors.principal} hint="Regex: correo válido o teléfono de 7 a 20 dígitos." /></div>
+        <FormField id="clientPrincipal" label="Correo o teléfono principal" value={principal} onChange={(value) => setPrincipal(value.slice(0, 120))} error={errors.principal} hint="Ingresa un correo válido o un teléfono." /></div>
       <div><span className="fieldLabel">Contactos secundarios / referencia</span>
         {secondaries.map((item, index) => <div className="formRow" key={index}>
           <div style={{ flex: 1 }}><FormField id={`secondaryName-${index}`} label="Nombre completo" value={item.name} onChange={(value) => changeSecondary(index, 'name', value.slice(0, 80))} error={errors[`secondaryName-${index}`]} /></div>
