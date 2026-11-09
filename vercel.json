@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://catherine-cartoons-yukon-primarily.trycloudflare.com/api/:path*"
+      "destination": "https://seattle-headline-jokes-persian.trycloudflare.com/api/:path*"
     }
   ]
 }
