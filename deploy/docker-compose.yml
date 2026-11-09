@@ -1,0 +1,25 @@
+services:
+  backend-recovery:
+    image: eclipse-temurin:21-jre
+    container_name: servicio-recovery
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./app.jar:/app/app.jar
+    environment:
+      DB_URL: "jdbc:mysql://gateway01.us-west-2.prod.aws.tidbcloud.com:4000/transporteDb?useSSL=true&requireSSL=true&allowPublicKeyRetrieval=true&serverTimezone=America/Mexico_City"
+      DB_USERNAME: "3BvLvtcr4gbhPpu.root"
+      DB_PASSWORD: "3UgQS14oy3ZEAYxV"
+      APP_ENCRYPTION_KEY: "ataXVSa/d/CW3y9xj3eqcFyJSeXUN7HxDDI0KviCKdY="
+      APP_LOOKUP_KEY: "URTKqmN9pyM2d+IE6FUyGoRHZp203qOCtNjqL6l5kAo="
+      APP_FRONTEND_ORIGIN: "https://tallerprompting.vercel.app"
+      APP_RECOVERY_DEV_EXPOSE: "true"
+    command: ["java", "-jar", "app.jar"]
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    restart: always
+    command: tunnel --url http://backend-recovery:8082
+    depends_on:
+      - backend-recovery
