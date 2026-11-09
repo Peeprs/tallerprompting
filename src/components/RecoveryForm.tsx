@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { authApi } from '../api/authApi';
 import type { FieldErrors, Notice } from '../types';
 import { isAdmittedEmail, isSafePassword } from '../utils/validation';
@@ -7,9 +7,13 @@ import { Icon } from './Icon';
 import { PasswordRules } from './PasswordRules';
 
 // Actor: usuario sin acceso que olvido su clave.
-// Formulario en dos fases: solicita enlace y luego introduce el código temporal OTP y nueva clave.
+// Flujo secuencial estricto:
+// 1. 'email': Solo solicita correo.
+// 2. 'code': Solo pide introducir el código (sin campos de contraseña).
+// 3. 'new-password': Solo tras validar el código, pide la nueva contraseña.
+// Al terminar exitosamente, regresa a la pantalla 'email' inicial.
 export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotice: (notice: Notice) => void }) {
-  const [step, setStep] = useState<'request' | 'reset'>('request');
+  const [step, setStep] = useState<'email' | 'code' | 'new-password'>('email');
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
@@ -18,27 +22,11 @@ export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotic
   const [devToken, setDevToken] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, setPending] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(900); // 15 minutos en segundos
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Contador de expiracion en la fase de codigo OTP
-  useEffect(() => {
-    if (step !== 'reset' || timeLeft <= 0) return;
-    const interval = setInterval(() => {
-      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [step, timeLeft]);
-
-  const formatTimer = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
-
-  // Solicita el enlace de recuperacion. Tecnica: respuesta identica exista o no la cuenta.
-  const submitRequest = async (event: React.FormEvent) => {
+  // 1. Enviar solicitud de correo
+  const submitEmail = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!isAdmittedEmail(email)) {
       setErrors({ email: 'Ingresa un correo permitido y válido.' });
@@ -55,10 +43,10 @@ export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotic
         const chars = result.devToken.slice(0, 6).split('');
         setOtpDigits([...chars, '', '', '', '', ''].slice(0, 6));
       } else {
+        setToken('');
         setOtpDigits(['', '', '', '', '', '']);
       }
-      setTimeLeft(900);
-      setStep('reset');
+      setStep('code');
       onNotice({ kind: 'success', title: 'Solicitud procesada', message: 'Si existe una cuenta asociada, recibirás un enlace de un solo uso que vence en 15 minutos.' });
     } catch (error) {
       const network = error instanceof Error && error.message === 'NETWORK_UNAVAILABLE';
@@ -68,7 +56,7 @@ export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotic
     }
   };
 
-  // Manejo de dígitos del código temporal
+  // 2. Manejo de cajas de código OTP adaptadas al diseño del sistema
   const handleOtpChange = (index: number, value: string) => {
     const clean = value.replace(/[^a-zA-Z0-9]/g, '');
     if (!clean) {
@@ -78,7 +66,6 @@ export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotic
       return;
     }
     if (clean.length > 1) {
-      // Manejo de pegado en la casilla
       handleOtpPaste(clean);
       return;
     }
@@ -113,41 +100,59 @@ export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotic
     setOtpDigits(Array.from({ length: 6 }, (_, i) => chars[i] || ''));
   };
 
-  // Restablece la clave con el token. Tecnica: valida fortaleza antes de enviar al servidor.
+  // 2b. Validar el código antes de mostrar el formulario de nueva contraseña
+  const submitCode = (event: React.FormEvent) => {
+    event.preventDefault();
+    const effectiveToken = token.trim() || otpDigits.join('').trim();
+    if (!effectiveToken || effectiveToken.length < 4) {
+      setErrors({ token: 'Introduce el código o token completo recibido.' });
+      onNotice({ kind: 'error', title: 'Código incompleto', message: 'Por favor ingresa el código recibido en tu correo.' });
+      return;
+    }
+    setErrors({});
+    setStep('new-password');
+  };
+
+  // 3. Restablecer la contraseña una vez validado el código
   const submitReset = async (event: React.FormEvent) => {
     event.preventDefault();
     const effectiveToken = token.trim() || otpDigits.join('').trim();
     const nextErrors: FieldErrors = {};
-    if (!effectiveToken) nextErrors.token = 'Introduce el código o token recibido.';
+    if (!effectiveToken) nextErrors.token = 'Falta el código de recuperación.';
     if (!isSafePassword(newPassword)) nextErrors.newPassword = 'La contraseña aún no cumple los requisitos.';
     if (newPassword !== confirmation || !confirmation) nextErrors.confirmation = 'Las contraseñas deben coincidir.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
-      onNotice({ kind: 'error', title: 'Revisa los datos', message: 'Completa el código y una contraseña válida.' });
+      onNotice({ kind: 'error', title: 'Revisa los datos', message: 'Completa una contraseña válida y asegúrate de que coincidan.' });
       return;
     }
     setPending(true);
     try {
       await authApi.resetPassword(effectiveToken, newPassword);
-      onNotice({ kind: 'success', title: 'Contraseña actualizada', message: 'Ya puedes ingresar con tu nueva contraseña.' });
-      // Limpia el estado y regresa a la pantalla inicial como se solicitó
+      onNotice({ kind: 'success', title: 'Contraseña actualizada', message: 'Tu contraseña ha sido actualizada. Ingresa con tus nuevas credenciales.' });
+      // Limpia todo y regresa a la pantalla inicial 'email'
+      setEmail('');
       setToken('');
       setOtpDigits(['', '', '', '', '', '']);
       setNewPassword('');
       setConfirmation('');
       setDevToken('');
       setErrors({});
-      setStep('request');
+      setStep('email');
     } catch (error) {
       const network = error instanceof Error && error.message === 'NETWORK_UNAVAILABLE';
       onNotice({ kind: 'error', title: network ? 'No hay conexión' : 'Token no válido', message: network ? 'Comprueba tu internet y vuelve a intentarlo.' : 'El token expiró, ya fue usado o no es correcto.' });
+      // Si el token es inválido, regresa al paso de código para corregirlo
+      setStep('code');
     } finally {
       setPending(false);
     }
   };
 
-  // FASE 1: Solicitud inicial (únicamente se muestra el correo)
-  if (step === 'request') {
+  // ==========================================
+  // FASE 1: ÚNICAMENTE SOLICITAR CORREO
+  // ==========================================
+  if (step === 'email') {
     return (
       <div className="authCard">
         <header>
@@ -165,7 +170,7 @@ export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotic
           <li>Crea una contraseña nueva antes de que expire.</li>
         </ol>
 
-        <form noValidate onSubmit={submitRequest}>
+        <form noValidate onSubmit={submitEmail}>
           <FormField
             id="recoveryEmail"
             label="Correo electrónico"
@@ -183,22 +188,24 @@ export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotic
     );
   }
 
-  // FASE 2: Introducir código temporal OTP y nueva contraseña (diseño oscuro/morado con temporizador)
-  return (
-    <div className="authCard">
-      <header>
-        <button className="backButton" onClick={() => { setErrors({}); setStep('request'); }}>
-          <Icon name="arrow" size={16} /> Volver a solicitar
-        </button>
-        <p className="eyebrow">Recuperación segura</p>
-        <h2>Introduce tu código</h2>
-        <p>Escribe el código temporal enviado a <strong>{email || 'tu correo'}</strong>.</p>
-      </header>
+  // ==========================================
+  // FASE 2: ÚNICAMENTE INTRODUCIR CÓDIGO
+  // (Sin campos de contraseña, diseño actual del sistema)
+  // ==========================================
+  if (step === 'code') {
+    return (
+      <div className="authCard">
+        <header>
+          <button className="backButton" onClick={() => { setErrors({}); setStep('email'); }}>
+            <Icon name="arrow" size={16} /> Volver a solicitar
+          </button>
+          <p className="eyebrow">Recuperación segura</p>
+          <h2>Introduce tu código</h2>
+          <p>Escribe el código recibido en tu correo <strong>{email}</strong>.</p>
+        </header>
 
-      <form noValidate onSubmit={submitReset}>
-        <div className="otpCard">
-          <p className="otpInstruction">Introduce el código temporal recibido:</p>
-          <div className="otpInputsRow">
+        <form noValidate onSubmit={submitCode}>
+          <div className="otpBoxGroup">
             {otpDigits.map((digit, idx) => (
               <input
                 key={idx}
@@ -214,31 +221,57 @@ export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotic
                   e.preventDefault();
                   handleOtpPaste(e.clipboardData.getData('text'));
                 }}
-                className={`otpInputBox ${digit ? 'filled' : ''}`}
+                className={`otpBoxInput ${digit ? 'filled' : ''}`}
                 autoFocus={idx === 0}
               />
             ))}
           </div>
 
-          <div className="otpTimerMeta">
-            <div>
-              Vence en <span className="otpTimerBadge">{formatTimer(timeLeft)}</span>
-            </div>
-            <div className="otpTimerInfo">
-              <Icon name="history" size={14} /> Expira en 15 min
-            </div>
-          </div>
+          {errors.token && (
+            <p className="fieldError" style={{ marginTop: '-14px', marginBottom: '14px' }}>
+              {errors.token}
+            </p>
+          )}
 
           {devToken && (
-            <button type="button" className="otpDevTokenAlert" onClick={applyDevToken} title="Haz clic para autocompletar">
-              <span>⚡ Modo desarrollo: <strong>{devToken.slice(0, 10)}…</strong></span>
+            <button type="button" className="devTokenHelper" onClick={applyDevToken} title="Haz clic para autocompletar">
+              <span>⚡ Token detectado: <strong>{devToken.slice(0, 12)}…</strong></span>
               <u>Autocompletar</u>
             </button>
           )}
-        </div>
 
-        {errors.token && <p className="fieldError" style={{ marginTop: '-10px', marginBottom: '14px' }}>{errors.token}</p>}
+          <button className="primaryButton fullWidth">
+            Verificar código →
+          </button>
 
+          <button
+            type="button"
+            className="secondaryActionBtn"
+            onClick={() => { setErrors({}); setStep('email'); }}
+          >
+            Volver
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // FASE 3: ÚNICAMENTE NUEVA CONTRASEÑA Y CONFIRMACIÓN
+  // (Aparece solo una vez validado el código)
+  // ==========================================
+  return (
+    <div className="authCard">
+      <header>
+        <button className="backButton" onClick={() => { setErrors({}); setStep('code'); }}>
+          <Icon name="arrow" size={16} /> Modificar código
+        </button>
+        <p className="eyebrow">Recuperación segura</p>
+        <h2>Crea tu nueva contraseña</h2>
+        <p>Escribe y confirma tu nueva contraseña de acceso seguro.</p>
+      </header>
+
+      <form noValidate onSubmit={submitReset}>
         <FormField
           id="recoveryPassword"
           label="Nueva contraseña"
@@ -261,16 +294,16 @@ export function RecoveryForm({ onBack, onNotice }: { onBack: () => void; onNotic
           autoComplete="new-password"
         />
 
-        <button className="otpActionBtn" disabled={pending}>
-          {pending ? 'Actualizando…' : 'Verificar y entrar →'}
+        <button className="primaryButton fullWidth" disabled={pending}>
+          {pending ? 'Actualizando…' : 'Actualizar contraseña'}
         </button>
 
         <button
           type="button"
-          className="otpSecondaryBtn"
-          onClick={() => { setErrors({}); setStep('request'); }}
+          className="secondaryActionBtn"
+          onClick={() => { setErrors({}); setStep('code'); }}
         >
-          Volver
+          Volver al código
         </button>
       </form>
     </div>

@@ -24,12 +24,15 @@ public class SecurityConfiguration {
  @Bean SecurityFilterChain securityFilterChain(HttpSecurity http, SessionAuthenticationFilter filter) throws Exception { return http.csrf(csrf -> csrf.disable()).cors(cors -> {}).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authorizeHttpRequests(auth -> auth.dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll().requestMatchers("/api/v1/auth/**", "/actuator/health", "/actuator/health/**").permitAll().anyRequest().authenticated()).addFilterBefore(filter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class).build(); }
  @Bean CorsConfigurationSource corsConfigurationSource(FrontendProperties props) {
    CorsConfiguration config = new CorsConfiguration();
-   // Acepta tanto localhost como 127.0.0.1 para desarrollo (el navegador puede usar cualquiera)
-   config.setAllowedOrigins(List.of(
-     props.frontendOrigin(),
-     props.frontendOrigin().replace("127.0.0.1", "localhost"),
-     props.frontendOrigin().replace("localhost", "127.0.0.1")
+   config.setAllowedOriginPatterns(List.of(
+     "http://localhost:*",
+     "http://127.0.0.1:*",
+     "https://*.vercel.app",
+     "https://tallerprompting.vercel.app"
    ));
+   if (props.frontendOrigin() != null && !props.frontendOrigin().isBlank()) {
+     config.addAllowedOrigin(props.frontendOrigin());
+   }
    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
    config.setAllowedHeaders(List.of("*"));
    // El frontend lee trace_id/request_id de la respuesta para correlacionar. Actor: sistema. Técnica: solo cabeceras de correlación.
