@@ -25,8 +25,13 @@ export function LoginForm({ onNavigate, onNotice, onAuthenticated }: Props) {
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
       const network = code === 'NETWORK_UNAVAILABLE';
+      const timeout = code === 'REQUEST_TIMEOUT';
       const session = code === 'SESSION_NOT_RESTORED';
-      onNotice({ kind: 'error', title: network ? 'No hay conexión' : session ? 'No se conservó la sesión' : 'No fue posible iniciar sesión', message: network ? 'Verifica tu conexión a internet e inténtalo nuevamente.' : session ? 'La cookie de acceso no quedó disponible. Revisa que frontend y backend usen el mismo host y vuelve a intentarlo.' : 'Los datos no son válidos o tu cuenta no puede acceder.' });
+      onNotice({
+        kind: 'error',
+        title: network ? 'No hay conexión' : timeout ? 'Tiempo de espera agotado' : session ? 'No se conservó la sesión' : 'No fue posible iniciar sesión',
+        message: network ? 'Verifica tu conexión a internet e inténtalo nuevamente.' : timeout ? 'El servidor tardó en responder. Comprueba tu conexión e inténtalo de nuevo.' : session ? 'La cookie de acceso no quedó disponible. Revisa que frontend y backend usen el mismo host y vuelve a intentarlo.' : 'Los datos no son válidos o tu cuenta no puede acceder.'
+      });
     } finally { setPending(false); }
   };
 

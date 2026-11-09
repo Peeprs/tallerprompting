@@ -3,6 +3,7 @@ package mx.portaltransporte.domain;
 import jakarta.persistence.*;
 import java.sql.Types;
 import java.util.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 
 @Entity @Table(name = "client")
@@ -15,7 +16,9 @@ public class ClientRecord {
   // Taller activo asociado (UC-CV-01). Actor: RECEPCIONISTA elige taller ACTIVO. Tecnica: opcional por compatibilidad.
   @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "workshop_id") private Workshop workshop;
   @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "status_id") private WorkshopStatus status;
+ @BatchSize(size = 50)
  @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true) private List<ClientIdentification> identifications = new ArrayList<>();
+ @BatchSize(size = 50)
  @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true) private List<ClientContact> contacts = new ArrayList<>();
  protected ClientRecord() { }
  public ClientRecord(String type, byte[] name, byte[] nonce, UserAccount actor) { id=UuidV7.next(); clientType=type; nameCiphertext=name; nameNonce=nonce; createdBy=actor; }

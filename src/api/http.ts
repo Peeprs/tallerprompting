@@ -3,7 +3,7 @@
 // Simple: una funcion para JSON y otra para multipart; ambas con credenciales y 12 s de limite.
 import { endSpan, getSessionId, newRequestId, sanitizePath, startSpan, trackEvent, traceparentFor } from '../telemetry';
 
-export const REQUEST_TIMEOUT_MS = 12000;
+export const REQUEST_TIMEOUT_MS = 30000;
 
 // Extrae el host de una URL absoluta sin conservar query. Actor: sistema. Tecnica: atributo de baja cardinalidad.
 function hostOf(input: string): string {

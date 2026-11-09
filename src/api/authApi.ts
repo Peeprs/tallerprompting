@@ -26,10 +26,7 @@ interface RecoveryRequestResponse { devToken?: string }
 export const authApi = {
   // Autentica usuario registrado. Actor: usuario con cuenta.
   login: async (identifier: string, password: string): Promise<AuthResponse> => {
-    await request<AuthResponse>('auth/login', { identifier, password });
-    const session = await authApi.session();
-    if (!session) throw new Error('SESSION_NOT_RESTORED');
-    return session;
+    return request<AuthResponse>('auth/login', { identifier, password });
   },
   // Recupera la sesion vigente desde la cookie HttpOnly. Actor: usuario con cuenta.
   session: async (): Promise<AuthResponse | null> => {
